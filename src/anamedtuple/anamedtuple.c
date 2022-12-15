@@ -2,16 +2,17 @@
 
 void PyDebug() {return;}
 
-static PyObject* _anamedtuple(PyObject* self, PyObject* _args) {
+static PyObject* _anamedtuple(PyObject* self, PyObject* args) {
 
-    if (PyTuple_Size(_args) != 2) {
+    if (PyTuple_Size(args) != 2) {
         PyErr_SetString(
             PyExc_TypeError,
-            "_anamedtuple() requires two positional arguments"
+            "_anamedtuple() requires two positional args"
         );
         return NULL;
     }
-    PyObject *name = PyTuple_GetItem(_args, 0);
+
+    PyObject *name = PyTuple_GetItem(args, 0);
 
     if (!name || !PyUnicode_Check(name)) {
         PyErr_SetString(
@@ -21,68 +22,47 @@ static PyObject* _anamedtuple(PyObject* self, PyObject* _args) {
         return NULL;
     }
 
-    Py_INCREF(name);
+    PyObject *attrs = PyTuple_GetItem(args, 1);
 
-    PyObject *args = PyTuple_GetItem(_args, 1);
+    PyObject* _builtins = PyImport_ImportModule("builtins");
+    PyObject* tuple = PyObject_GetAttrString(_builtins, "tuple");
+    PyObject* type = PyObject_GetAttrString(_builtins, "type");
 
-    PyObject* __dict__ = PyObject_GetAttrString(self, "__dict__");
-    PyObject* _cache = PyDict_GetItemString(__dict__, "_cache");
+    PyObject* _collections = PyImport_ImportModule("_collections");
+    PyObject* _tuplegetter = PyObject_GetAttrString(
+            _collections, "_tuplegetter"
+    );
 
-    if (!_cache) {
-        _cache = PyDict_New();
-        PyDict_SetItemString(__dict__, "_cache", _cache);
-    }
-    else {
-        Py_INCREF(_cache);
-    }
+    PyObject* methods = PyDict_New();
 
-    Py_DECREF(__dict__);
+    PyObject* key;
+    for (long i = 0; i < PyTuple_Size(attrs); i++) {
+        key = PyTuple_GetItem(attrs, i);
 
-    PyObject* _type = PyDict_GetItem(_cache, args);
+        PyObject* index = PyLong_FromLong(i);
+        PyObject* _tg_args = PyTuple_Pack(2, index, key);
+        PyObject* val = PyObject_CallObject(_tuplegetter, _tg_args);
+        PyDict_SetItem(methods, key, val);
 
-    if (!_type) {
-
-        PyObject* _builtins = PyImport_ImportModule("builtins");
-        PyObject* tuple = PyObject_GetAttrString(_builtins, "tuple");
-        PyObject* type = PyObject_GetAttrString(_builtins, "type");
-
-        PyObject* _collections = PyImport_ImportModule("_collections");
-        PyObject* _tuplegetter = PyObject_GetAttrString(
-                _collections, "_tuplegetter"
-        );
-
-        PyObject* methods = PyDict_New();
-
-        PyObject* key;
-        for (long i = 0; i < PyTuple_Size(args); i++) {
-            key = PyTuple_GetItem(args, i);
-            Py_INCREF(key);
-            PyObject* index = PyLong_FromLong(i);
-            PyObject* tg_args = PyTuple_Pack(2, index, key);
-            PyDict_SetItem(
-                methods, key, PyObject_CallObject(_tuplegetter, tg_args)
-            );
-            Py_DECREF(index);
-            Py_DECREF(tg_args);
-        }
-
-        PyObject* bases = PyTuple_Pack(1, tuple);
-        PyObject* t_args = PyTuple_Pack(3, name, bases, methods);
-        _type = PyObject_CallObject(type, t_args);
-
-        PyDict_SetItem(_cache, args, _type);
-        Py_INCREF(args);
-
-        Py_DECREF(_builtins);
-        Py_DECREF(_collections);
-        Py_DECREF(tuple);
-        Py_DECREF(type);
-    }
-    else {
-        Py_INCREF(_type);
+        Py_DECREF(val);
+        Py_DECREF(index);
+        Py_DECREF(_tg_args);
     }
 
-    Py_DECREF(_cache);
+    PyObject* bases = PyTuple_Pack(1, tuple);
+    PyObject* t_args = PyTuple_Pack(3, name, bases, methods);
+    PyObject* _type = PyObject_CallObject(type, t_args);
+
+    Py_DECREF(methods);
+
+    Py_DECREF(bases);
+    Py_DECREF(t_args);
+
+    Py_DECREF(_builtins);
+    Py_DECREF(tuple);
+    Py_DECREF(type);
+    Py_DECREF(_collections);
+    Py_DECREF(_tuplegetter);
 
     return _type;
 }
@@ -90,6 +70,7 @@ static PyObject* _anamedtuple(PyObject* self, PyObject* _args) {
 static PyObject* anamedtuple(PyObject* self, PyObject* args, PyObject* kwargs) {
 
     long arg_size = PyTuple_Size(args);
+
     if (arg_size > 1) {
         PyErr_SetString(
             PyExc_TypeError,
@@ -117,27 +98,51 @@ static PyObject* anamedtuple(PyObject* self, PyObject* args, PyObject* kwargs) {
     }
 
     long kwd_len = PyDict_Size(kwargs);
+
     PyObject *keys = PyTuple_New(kwd_len);
     PyObject *vals = PyTuple_New(kwd_len);
+
     PyObject *key, *val;
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &val)) {
+        Py_INCREF(key); Py_INCREF(val);
         PyTuple_SET_ITEM(keys, pos-1, key);
         PyTuple_SET_ITEM(vals, pos-1, val);
-        Py_INCREF(key);
-        Py_INCREF(val);
     }
 
-    PyObject* _args = PyTuple_Pack(2, name, keys);
-    PyObject* _type = _anamedtuple(self, _args);
+    PyObject* __dict__ = PyObject_GetAttrString(self, "__dict__");
+    PyObject* _cache = PyDict_GetItemString(__dict__, "_cache");
+
+    if (!_cache) {
+        _cache = PyDict_New();
+        PyDict_SetItemString(__dict__, "_cache", _cache);
+    }
+    else {
+        Py_INCREF(_cache);
+    }
+
+    PyObject* _type = PyDict_GetItem(_cache, keys);
+
+    if (!_type) {
+        PyObject* _args = PyTuple_Pack(2, name, keys);
+        _type = _anamedtuple(self, _args);
+        PyDict_SetItem(_cache, keys, _type);
+        Py_DECREF(_args);
+    }
+    else {
+        Py_INCREF(_type);
+    }
 
     PyObject* instance = PyObject_CallOneArg(_type, vals);
 
-    Py_DECREF(_args);
+    Py_DECREF(__dict__);
+    Py_DECREF(_cache);
+
+    Py_DECREF(name);
     Py_DECREF(vals);
     Py_DECREF(keys);
+
     Py_DECREF(_type);
-    Py_DECREF(name);
 
     return instance;
 }
