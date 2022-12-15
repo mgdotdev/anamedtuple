@@ -1,10 +1,21 @@
 import pytest
 
-from anamedtuple import anamedtuple
+from anamedtuple import anamedtuple, _anamedtuple
 
 class TestANamedTuple:
     def test_kwargs(self):
-        at = anamedtuple(x=5, y=6)
-        assert at.x == 5
-        assert at.y == 6
+        instance = anamedtuple(x=5, y=6)
+        assert instance.x == 5
+        assert instance.y == 6
 
+    def test_args(self):
+        with pytest.raises(TypeError) as err:
+            anamedtuple(1)
+
+        assert isinstance(err.value, TypeError)
+
+    def test_type_generation(self):
+        _type = _anamedtuple('x', 'y')
+        instance = _type((5, 6))
+        assert instance.x == 5
+        assert instance.y == 6
