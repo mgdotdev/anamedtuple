@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: anamedtuple
+Version: 0.0.1
+Summary: UNKNOWN
+Home-page: https://github.com/1mikegrn/anamedtuple
+Author: Michael Green
+Author-email: michael@michaelgreen.dev
+License: MIT
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Provides-Extra: testing
+
+UNKNOWN
+

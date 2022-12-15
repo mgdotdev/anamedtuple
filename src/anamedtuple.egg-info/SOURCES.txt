@@ -1,0 +1,11 @@
+README.md
+setup.py
+src/anamedtuple/__init__.py
+src/anamedtuple.egg-info/PKG-INFO
+src/anamedtuple.egg-info/SOURCES.txt
+src/anamedtuple.egg-info/dependency_links.txt
+src/anamedtuple.egg-info/requires.txt
+src/anamedtuple.egg-info/top_level.txt
+src/anamedtuple/tools/__init__.py
+src/anamedtuple/tools/_anamedtuple.c
+test/test_anamedtuple.py
