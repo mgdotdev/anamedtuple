@@ -1,1 +1,1 @@
-from .anamedtuple import anamedtuple
+from .anamedtuple import anamedtuple, _anamedtuple
